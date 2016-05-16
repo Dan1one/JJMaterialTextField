@@ -25,6 +25,11 @@
  */
 @property (nonatomic, strong, nullable) UIColor *lineColor;
 
+/**
+ *  The color of the line when the textfield is active.  Default is [UIColor lightGrayColor];
+ */
+@property (nonatomic, strong, nullable) UIColor *standByLineColor;
+
 
 /**
  *  Shows an error - makes the line the error color.
