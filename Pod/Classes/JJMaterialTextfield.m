@@ -17,9 +17,63 @@
 @end
 
 @implementation JJMaterialTextfield
-@synthesize errorColor,lineColor;
+
+@synthesize errorColor = _errorColor;
+@synthesize lineColor= _lineColor;
+@synthesize standByLineColor = _standByLineColor;
+
 
 #define DEFAULT_ALPHA_LINE 0.8
+
+#pragma mark - Setters And Getters
+
+
+-(void)setErrorColor:(UIColor *)errorColor
+{
+    _errorColor = errorColor;
+    if (showError)
+    {
+        [line setBackgroundColor:_errorColor];
+    }
+}
+
+
+-(UIColor *)errorColor
+{
+    if (!_errorColor)
+    {
+        _errorColor = [UIColor colorWithRed:0.910 green:0.329 blue:0.271 alpha:1.000]; // FLAT RED COLOR
+    }
+    
+    return _errorColor;
+}
+
+
+-(void)setLineColor:(UIColor *)lineColor
+{
+    _lineColor = lineColor;
+    [line setBackgroundColor:_errorColor];
+}
+
+-(UIColor *)lineColor
+{
+    if (!_lineColor)
+    {
+        _lineColor = [UIColor lightGrayColor];
+    }
+    return _lineColor;
+}
+
+
+-(void)setStandByLineColor:(UIColor *)standByLineColor
+{
+    _standByLineColor = standByLineColor;
+    [line setBackgroundColor:standByLineColor];
+}
+
+
+
+#pragma mark - Initialisers
 
 - (instancetype)initWithFrame:(CGRect)frame
 {
@@ -39,14 +93,15 @@
 
 - (void)commonInit
 {
-    lineColor = [UIColor lightGrayColor];
-    errorColor = [UIColor colorWithRed:0.910 green:0.329 blue:0.271 alpha:1.000]; // FLAT RED COLOR
     line = [[UIView alloc] init];
-    line.backgroundColor = [lineColor colorWithAlphaComponent:DEFAULT_ALPHA_LINE];
+    line.backgroundColor = self.standByLineColor;
     [self addSubview:line];
+    
     self.clipsToBounds = NO;
     [self setEnableMaterialPlaceHolder:self.enableMaterialPlaceHolder];
     [self addTarget:self action:@selector(textFieldDidChange:) forControlEvents:UIControlEventEditingChanged];
+    [self addTarget:self action:@selector(textFieldDidChange:) forControlEvents:UIControlEventEditingDidBegin];
+    [self addTarget:self action:@selector(textFieldDidEndEditing:) forControlEvents:UIControlEventEditingDidEnd];
     
 }
 
@@ -60,39 +115,71 @@
 {
     if (self.enableMaterialPlaceHolder) {
         
+        placeHolderLabel.alpha = 1;
+        self.attributedPlaceholder = nil;
+        
+        if (!CGAffineTransformIsIdentity(placeHolderLabel.transform))
+        {
+            return;
+        }
+        
+        CGAffineTransform originalTransform = CGAffineTransformMakeScale(0.6f, 0.6f);
+
+        originalTransform = CGAffineTransformTranslate(originalTransform, -placeHolderLabel.frame.size.width*0.30, -placeHolderLabel.frame.size.height * 1.2 );
+        [self setPlaceholderTransform:originalTransform animated:YES];
+        
+    }
+}
+
+-(void)setPlaceholderTransform:(CGAffineTransform)transform animated:(BOOL)yesOrNo
+{
+    if (!yesOrNo)
+    {
+        [placeHolderLabel setTransform:transform];
+        return;
+    }
+    
+    
+    CGFloat duration = 0.5;
+    CGFloat delay = 0;
+    CGFloat damping = 0.6;
+    CGFloat velocity = 1;
+    
+    [UIView animateWithDuration:duration
+                          delay:delay
+         usingSpringWithDamping:damping
+          initialSpringVelocity:velocity
+                        options:UIViewAnimationOptionCurveEaseInOut animations:^{
+                            
+                            [placeHolderLabel setTransform:transform];
+                            
+                        }
+                     completion:^(BOOL finished) {
+                         
+                     }];
+}
+
+
+- (IBAction)textFieldDidEndEditing:(id)sender
+{
+    if (self.enableMaterialPlaceHolder)
+    {
+        
         if (!self.text || self.text.length > 0) {
             placeHolderLabel.alpha = 1;
             self.attributedPlaceholder = nil;
         }
-//        else {
-//            self.attributedPlaceholder = nil;
-//        }
         
-        CGFloat duration = 0.5;
-        CGFloat delay = 0;
-        CGFloat damping = 0.6;
-        CGFloat velocity = 1;
+        if (!(!self.text || self.text.length <= 0) && !CGAffineTransformIsIdentity(placeHolderLabel.transform))
+        {
+            return;
+        }
         
-        [UIView animateWithDuration:duration
-                              delay:delay
-             usingSpringWithDamping:damping
-              initialSpringVelocity:velocity
-                            options:UIViewAnimationOptionCurveEaseInOut animations:^{
-
-                                if (!self.text || self.text.length <= 0) {
-                                    placeHolderLabel.transform = CGAffineTransformIdentity;
-                                }
-                                else {
-                                    placeHolderLabel.transform = CGAffineTransformMakeTranslation(0, -placeHolderLabel.frame.size.height - 5);
-                                }
-                                
-                            }
-                         completion:^(BOOL finished) {
-                             
-                         }];
-       
+        [self setPlaceholderTransform:CGAffineTransformIdentity animated:YES];
+        
     }
 }
+
 
 -(IBAction)clearAction:(id)sender
 {
@@ -109,10 +196,10 @@
                      animations:^{
                          
                          if (showError) {
-                             line.backgroundColor=errorColor;
+                             line.backgroundColor=self.errorColor;
                          }
                          else {
-                             line.backgroundColor=lineColor;
+                             line.backgroundColor=self.lineColor;
                          }
                          
                      }
@@ -133,12 +220,12 @@
                      animations:^{
                          
                          if (showError) {
-                             line.backgroundColor = errorColor;
+                             line.backgroundColor = self.errorColor;
                          }
                          else {
-                             line.backgroundColor = [lineColor colorWithAlphaComponent:DEFAULT_ALPHA_LINE];
+                             line.backgroundColor = self.standByLineColor?:[self.lineColor colorWithAlphaComponent:DEFAULT_ALPHA_LINE];
                          }
-
+                         
                          
                      }
                      completion:^(BOOL finished) {
@@ -146,8 +233,8 @@
                              //finalizacion
                          }
                      }];
-
-  }
+    
+}
 
 - (void)setPlaceholderAttributes:(NSDictionary *)placeholderAttributes
 {
@@ -159,11 +246,11 @@
 {
     [super setPlaceholder:placeholder];
     
-    NSDictionary *atts = @{NSForegroundColorAttributeName: [self.textColor colorWithAlphaComponent:0.8],
+    NSDictionary *atts = @{NSForegroundColorAttributeName: [self.textColor colorWithAlphaComponent:DEFAULT_ALPHA_LINE],
                            NSFontAttributeName : [self.font fontWithSize: self.font.pointSize]};
     
     self.attributedPlaceholder = [[NSAttributedString alloc] initWithString:placeholder ?: @"" attributes: self.placeholderAttributes ?: atts];
-
+    
     [self setEnableMaterialPlaceHolder:self.enableMaterialPlaceHolder];
 }
 
@@ -193,7 +280,7 @@
 - (BOOL)resignFirstResponder
 {
     BOOL returnValue = [super resignFirstResponder];
-   
+    
     [self unhighlight];
     
     return returnValue;
@@ -202,13 +289,13 @@
 - (void)showError
 {
     showError = YES;
-    line.backgroundColor = errorColor;
+    line.backgroundColor = self.errorColor;
 }
 
 - (void)hideError
 {
     showError = NO;
-    line.backgroundColor = lineColor;
+    line.backgroundColor = self.lineColor;
 }
 
 - (void)layoutSubviews
