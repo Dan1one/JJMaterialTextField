@@ -125,7 +125,7 @@
         
         CGAffineTransform originalTransform = CGAffineTransformMakeScale(0.6f, 0.6f);
 
-        originalTransform = CGAffineTransformTranslate(originalTransform, -placeHolderLabel.frame.size.width*0.30, -placeHolderLabel.frame.size.height * 1.2 );
+        originalTransform = CGAffineTransformTranslate(originalTransform, -placeHolderLabel.frame.size.width*0.30, -placeHolderLabel.frame.size.height * 1.5 );
         [self setPlaceholderTransform:originalTransform animated:YES];
         
     }
